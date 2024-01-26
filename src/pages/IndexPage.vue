@@ -1,49 +1,69 @@
 <template>
-  <q-page class="row items-center justify-evenly">
-    <example-component
-      title="Example component"
-      active
-      :todos="todos"
-      :meta="meta"
-    ></example-component>
+  <q-page class="m-auto">
+    <q-card class="no-shadow" bordered>
+      <q-card-section>
+        <div class="text-h6 text-grey-8">
+          Despesas
+          <q-btn label="Adicionar Despesa" class="float-right text-capitalize text-indigo-8 shadow-3" icon="add"
+            @click="handleAdd" />
+        </div>
+      </q-card-section>
+      <q-separator></q-separator>
+      <q-card-section class="q-pa-none">
+        <table-component v-if="paginatedData && !loading" :paginatedData="paginatedData" :fetchData="fetchData" />
+        <table-skeleton :rows="rowsPerPage" v-else />
+      </q-card-section>
+    </q-card>
   </q-page>
 </template>
 
-<script lang="ts">
-import { Todo, Meta } from 'components/models';
-import ExampleComponent from 'components/ExampleComponent.vue';
-import { defineComponent, ref } from 'vue';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useQuasar } from 'quasar';
+import { getExpenses, createExpense, ExpensePaginatedResponse } from '../api/expenses';
+import { notifySucess, notifyError } from '../utils/notify';
+import TableComponent from '../components/TableComponent.vue';
+import TableSkeleton from '../components/TableSkeleton.vue';
 
-export default defineComponent({
-  name: 'IndexPage',
-  components: { ExampleComponent },
-  setup () {
-    const todos = ref<Todo[]>([
-      {
-        id: 1,
-        content: 'ct1'
-      },
-      {
-        id: 2,
-        content: 'ct2'
-      },
-      {
-        id: 3,
-        content: 'ct3'
-      },
-      {
-        id: 4,
-        content: 'ct4'
-      },
-      {
-        id: 5,
-        content: 'ct5'
-      }
-    ]);
-    const meta = ref<Meta>({
-      totalCount: 1200
+
+const paginatedData = ref<ExpensePaginatedResponse | null>(null);
+const loading = ref<boolean>(false);
+const rowsPerPage = ref<number>(10);
+
+const $q = useQuasar()
+
+const fetchData = async (page = 1, limit = 10) => {
+  rowsPerPage.value = limit
+  loading.value = true
+  await getExpenses(page, limit)
+    .then((res) => {
+      paginatedData.value = res
+      loading.value = false
+    })
+    .catch((err) => {
+      notifyError($q, 'Error fetching expenses')
+      console.log(err);
     });
-    return { todos, meta };
-  }
-});
+}
+
+const handleAdd = async () => {
+  const newExpense = {
+    description: 'Viagem para o Canadá',
+    date: new Date().toISOString().split('T')[0],
+    value: 1
+  };
+
+  await createExpense(newExpense)
+    .then(expense => {
+      fetchData(paginatedData.value?.meta.current_page, paginatedData.value?.meta.per_page)
+      notifySucess($q, 'Despesa adicionada com sucesso!')
+      console.log('Despesa adicionada com sucesso:', expense);
+    })
+    .catch(error => {
+      notifyError($q, 'Erro ao adicionar despesa :(')
+      console.error('Erro ao adicionar despesa:', error);
+    });
+};
+
+fetchData()
 </script>

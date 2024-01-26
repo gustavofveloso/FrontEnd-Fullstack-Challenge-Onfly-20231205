@@ -1,8 +1,8 @@
 {
-  "name": "frontend",
+  "name": "Onfly - Expenses App",
   "version": "0.0.1",
-  "description": "A Quasar Project",
-  "productName": "Quasar App",
+  "description": "Etapa frontend do processo de seleção para a Onfly",
+  "productName": "Onfly - Gestão de Despesas",
   "author": "Gustavo Farias <gustavofveloso@gmail.com>",
   "private": true,
   "scripts": {
